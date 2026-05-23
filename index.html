@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>MedCalc - Conversor de Analitos Clínicos</title>
     <style>
         :root {
@@ -48,6 +48,8 @@
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
         }
 
         header {
@@ -73,12 +75,16 @@
             width: 28px;
             height: 28px;
             fill: var(--primary);
+            flex-shrink: 0;
         }
 
         h1 {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             font-weight: 700;
             color: var(--primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .theme-toggle {
@@ -92,6 +98,7 @@
             justify-content: center;
             color: var(--text-primary);
             background-color: var(--bg-primary);
+            flex-shrink: 0;
         }
 
         .theme-toggle svg {
@@ -106,6 +113,8 @@
             max-width: 650px;
             width: 100%;
             margin: 0 auto;
+            display: flex;
+            flex-direction: column;
         }
 
         .search-container {
@@ -147,6 +156,7 @@
             padding-bottom: 0.5rem;
             margin-bottom: 1rem;
             scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
         }
 
         .categories::-webkit-scrollbar {
@@ -187,6 +197,7 @@
             justify-content: space-between;
             align-items: center;
             transition: transform 0.1s, box-shadow 0.1s;
+            gap: 1rem;
         }
 
         .analyte-card:active {
@@ -194,22 +205,34 @@
             background-color: var(--bg-primary);
         }
 
+        .analyte-info {
+            flex: 1;
+            min-width: 0;
+        }
+
         .analyte-info h3 {
             font-size: 1rem;
             font-weight: 600;
             margin-bottom: 0.2rem;
             text-transform: capitalize;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .analyte-info p {
             font-size: 0.8rem;
             color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .chevron-icon {
             width: 18px;
             height: 18px;
             fill: var(--text-secondary);
+            flex-shrink: 0;
         }
 
         .calculator-view {
@@ -244,6 +267,7 @@
             margin-bottom: 0.5rem;
             text-transform: uppercase;
             font-weight: 700;
+            word-wrap: break-word;
         }
 
         .calc-subtitle {
@@ -267,13 +291,33 @@
             margin-bottom: 0.4rem;
         }
 
+        /* 
+           SOLUCIÓN AL DESBORDE HORIZONTAL:
+           Apila los elementos en vertical por defecto para pantallas de móvil estrechas 
+        */
         .input-control-wrapper {
             display: flex;
-            gap: 0.5rem;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        /* Si la pantalla mide 480px o más, los acomoda de forma horizontal */
+        @media (min-width: 480px) {
+            .input-control-wrapper {
+                flex-direction: row;
+            }
+            .input-field {
+                flex: 2;
+            }
+            .select-unit {
+                flex: 3;
+                max-width: 60%;
+            }
         }
 
         .input-field {
-            flex: 1;
+            width: 100%;
             padding: 0.85rem;
             font-size: 1.25rem;
             font-weight: bold;
@@ -290,7 +334,8 @@
         }
 
         .select-unit {
-            padding: 0.85rem 1.5rem 0.85rem 0.75rem;
+            width: 100%;
+            padding: 0.85rem 2rem 0.85rem 0.75rem;
             font-size: 1rem;
             font-weight: 600;
             border: 1px solid var(--border);
@@ -299,6 +344,14 @@
             color: var(--text-primary);
             cursor: pointer;
             outline: none;
+            /* Elimina la flecha del sistema para tener un aspecto consistente y evitar desbordes */
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%230284c7'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5rem;
         }
 
         .results-section {
@@ -319,26 +372,35 @@
             gap: 0.5rem;
         }
 
+        /* 
+           Ajustamos las tarjetas de resultados para que respondan perfectamente 
+           en pantallas de móviles sin colisionar los textos con los valores numéricos.
+        */
         .result-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border);
-            padding: 1rem;
+            padding: 0.85rem 1rem;
             border-radius: var(--radius);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 1rem;
+        }
+
+        .result-unit {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            flex: 1;
+            word-break: break-word; /* Rompe palabras largas si no caben en pantalla */
         }
 
         .result-value {
             font-size: 1.2rem;
             font-weight: 700;
             color: var(--primary);
-        }
-
-        .result-unit {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-secondary);
+            text-align: right;
+            white-space: nowrap; /* Mantiene el número entero en una línea */
         }
 
         .reference-card {
@@ -379,6 +441,7 @@
             color: var(--text-secondary);
             border-top: 1px solid var(--border);
             background-color: var(--bg-card);
+            margin-top: auto;
         }
     </style>
 </head>
@@ -394,7 +457,6 @@
         </div>
         <button class="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema">
             <svg id="theme-icon" viewBox="0 0 24 24">
-                <!-- Sol por defecto, se cambia dinámicamente -->
                 <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.01c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
             </svg>
         </button>
@@ -407,7 +469,7 @@
                 <svg class="search-icon" viewBox="0 0 24 24">
                     <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
                 </svg>
-                <input type="text" id="search-bar" class="search-input" placeholder="Buscar analito (ej. creatinina, calcitonina)..." oninput="filterAnalytes()">
+                <input type="text" id="search-bar" class="search-input" placeholder="Buscar analito (ej. creatinina, urea)..." oninput="filterAnalytes()">
             </div>
 
             <!-- Categorías de Filtrado rápido -->
@@ -470,13 +532,12 @@
     </main>
 
     <footer>
-        <p>MedCalc Convert v1.2 - 100% Offline</p>
+        <p>MedCalc Convert v1.3 - 100% Offline</p>
         <p style="margin-top: 0.2rem; opacity: 0.7;">Consulte guías locales para decisiones de diagnóstico definitivo.</p>
     </footer>
 
     <script>
-        // Datos de Analitos con Conversiones Precisas basadas en Fórmulas Clínicas Reales
-        // 'factor' define la equivalencia de cada unidad con respecto a la unidad de referencia (que tiene factor = 1)
+        // Base de datos unificada de analitos clínicos para funcionamiento Offline
         const analytesData = {
             "glucosa": {
                 name: "Glucosa",
@@ -497,12 +558,12 @@
                 category: "metabolitos",
                 units: {
                     "mg/dL": { factor: 1, label: "mg/dL" },
-                    "µmol/L": { factor: 88.4, label: "µmol/L (microsmol)" },
+                    "µmol/L (microsmol)": { factor: 88.4, label: "µmol/L (microsmol)" },
                     "mmol/L": { factor: 0.0884, label: "mmol/L" }
                 },
                 references: {
                     "mg/dL": "Hombres: 0.7 - 1.3 mg/dL.<br>Mujeres: 0.6 - 1.1 mg/dL.",
-                    "µmol/L": "Hombres: 62 - 115 µmol/L (microsmol).<br>Mujeres: 53 - 97 µmol/L (microsmol).",
+                    "µmol/L (microsmol)": "Hombres: 62 - 115 µmol/L (microsmol).<br>Mujeres: 53 - 97 µmol/L (microsmol).",
                     "mmol/L": "Hombres: 0.062 - 0.115 mmol/L.<br>Mujeres: 0.053 - 0.097 mmol/L."
                 }
             },
@@ -1020,7 +1081,6 @@
                     card.className = "analyte-card";
                     card.onclick = () => openCalculator(id);
 
-                    // Extraer las unidades de medida disponibles para mostrarlas como badge informativo
                     const unitsAvail = Object.keys(data.units).join(", ");
 
                     card.innerHTML = `
@@ -1050,7 +1110,6 @@
             document.getElementById("calc-name").innerText = analyte.name;
             document.getElementById("calc-category").innerText = "Categoría: " + analyte.category.toUpperCase();
 
-            // Rellenar select de unidad de entrada
             const unitSelect = document.getElementById("input-unit-select");
             unitSelect.innerHTML = "";
             for (const [unitKey, value] of Object.entries(analyte.units)) {
@@ -1060,14 +1119,14 @@
                 unitSelect.appendChild(option);
             }
 
-            // Inicializar valores de entrada
             document.getElementById("input-value").value = 1;
 
-            // Mostrar vista de calculadora y ocultar búsqueda
             document.getElementById("search-view").style.display = "none";
             document.getElementById("calculator-view").style.display = "block";
 
-            // Calcular por primera vez
+            // Asegura desplazar la pantalla al inicio de la calculadora
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             performConversion();
         }
 
@@ -1090,16 +1149,12 @@
             const analyte = analytesData[currentAnalyteId];
             resultsContainer.innerHTML = "";
 
-            // Convertimos el valor de entrada a la unidad base (la que tiene factor = 1)
             const baseFactor = analyte.units[fromUnit].factor;
             const baseValue = inputVal / baseFactor;
 
-            // Calculamos la conversión para cada una de las unidades disponibles simultáneamente
             for (const [unitKey, unitData] of Object.entries(analyte.units)) {
-                // Convertir de base a destino
                 const convertedValue = baseValue * unitData.factor;
                 
-                // Formatear decimales según tamaño del número para legibilidad clínica
                 let formattedValue;
                 if (convertedValue === 0) {
                     formattedValue = "0";
@@ -1120,7 +1175,6 @@
                 resultsContainer.appendChild(card);
             }
 
-            // Mostrar el valor de referencia según la unidad de entrada activa
             const refContent = document.getElementById("reference-content");
             const activeRef = analyte.references[fromUnit] || "Consulte rango de referencia de su laboratorio local.";
             refContent.innerHTML = activeRef;
