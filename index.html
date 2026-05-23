@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MedCalc - Conversor de Analitos Clínicos</title>
+    <style>
+        :root {
+            --bg-primary: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --primary-light: #e0f2fe;
+            --border: #cbd5e1;
+            --success: #10b981;
+            --accent: #f59e0b;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --radius: 12px;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --primary: #38bdf8;
+            --primary-hover: #7dd3fc;
+            --primary-light: #0c4a6e;
+            --border: #334155;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            font-family: var(--font);
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            fill: var(--primary);
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+        }
+
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        main {
+            flex: 1;
+            padding: 1rem;
+            max-width: 650px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.85rem 1rem 0.85rem 2.5rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+        }
+
+        .categories {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            scrollbar-width: none;
+        }
+
+        .categories::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-chip {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .category-chip.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .analyte-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .analyte-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .analyte-card:active {
+            transform: scale(0.98);
+            background-color: var(--bg-primary);
+        }
+
+        .analyte-info h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+            text-transform: capitalize;
+        }
+
+        .analyte-info p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .chevron-icon {
+            width: 18px;
+            height: 18px;
+            fill: var(--text-secondary);
+        }
+
+        .calculator-view {
+            display: none;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+            padding: 0.5rem 0;
+        }
+
+        .calc-header-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+        }
+
+        .calc-title {
+            font-size: 1.25rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .calc-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.4rem;
+        }
+
+        .input-control-wrapper {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 0.85rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            outline: none;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            background-color: var(--bg-card);
+        }
+
+        .select-unit {
+            padding: 0.85rem 1.5rem 0.85rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            outline: none;
+        }
+
+        .results-section {
+            margin-top: 1rem;
+        }
+
+        .results-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .result-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: var(--radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .result-unit {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .reference-card {
+            background-color: var(--bg-card);
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            margin-top: 1.25rem;
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .reference-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+        }
+
+        .reference-text {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: var(--text-primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        footer {
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            background-color: var(--bg-card);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Principal -->
+    <header>
+        <div class="logo-area">
+            <svg class="logo-icon" viewBox="0 0 24 24">
+                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+            </svg>
+            <h1>MedCalc Convert</h1>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema">
+            <svg id="theme-icon" viewBox="0 0 24 24">
+                <!-- Sol por defecto, se cambia dinámicamente -->
+                <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.01c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>
+            </svg>
+        </button>
+    </header>
+
+    <main>
+        <!-- Vista Principal de Búsqueda -->
+        <div id="search-view">
+            <div class="search-container">
+                <svg class="search-icon" viewBox="0 0 24 24">
+                    <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+                <input type="text" id="search-bar" class="search-input" placeholder="Buscar analito (ej. creatinina, calcitonina)..." oninput="filterAnalytes()">
+            </div>
+
+            <!-- Categorías de Filtrado rápido -->
+            <div class="categories">
+                <div class="category-chip active" onclick="selectCategory('all', this)">Todos</div>
+                <div class="category-chip" onclick="selectCategory('metabolitos', this)">Metabolitos</div>
+                <div class="category-chip" onclick="selectCategory('enzimas', this)">Enzimas</div>
+                <div class="category-chip" onclick="selectCategory('electrolitos', this)">Electrolitos</div>
+                <div class="category-chip" onclick="selectCategory('proteinas', this)">Inmuno/Proteínas</div>
+                <div class="category-chip" onclick="selectCategory('hormonas', this)">Hormonas</div>
+            </div>
+
+            <!-- Lista de Analitos -->
+            <div id="analyte-list-container" class="analyte-list">
+                <!-- Se poblará dinámicamente -->
+            </div>
+            <div id="empty-message" class="empty-state" style="display: none;">
+                No se encontraron analitos con ese nombre.
+            </div>
+        </div>
+
+        <!-- Vista de Calculadora / Conversión -->
+        <div id="calculator-view" class="calculator-view">
+            <button class="back-btn" onclick="showSearchView()">
+                <svg width="16" height="16" viewBox="0 0 24 24" style="fill: currentColor;">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+                Volver a la lista
+            </button>
+
+            <div class="calc-header-card">
+                <div id="calc-name" class="calc-title">ANALITO</div>
+                <div id="calc-category" class="calc-subtitle">Categoría</div>
+
+                <div class="input-group">
+                    <label for="input-value">Valor observado</label>
+                    <div class="input-control-wrapper">
+                        <input type="number" id="input-value" class="input-field" value="1" step="any" oninput="performConversion()">
+                        <select id="input-unit-select" class="select-unit" onchange="performConversion()">
+                            <!-- Se poblará dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="results-section">
+                    <div class="results-title">Conversión Simultánea</div>
+                    <div id="conversion-results" class="results-grid">
+                        <!-- Se poblará dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="reference-card">
+                    <div class="reference-title">Valores de Referencia Habituales</div>
+                    <div id="reference-content" class="reference-text">
+                        Cargando referencias clínicas...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>MedCalc Convert v1.2 - 100% Offline</p>
+        <p style="margin-top: 0.2rem; opacity: 0.7;">Consulte guías locales para decisiones de diagnóstico definitivo.</p>
+    </footer>
+
+    <script>
+        // Datos de Analitos con Conversiones Precisas basadas en Fórmulas Clínicas Reales
+        // 'factor' define la equivalencia de cada unidad con respecto a la unidad de referencia (que tiene factor = 1)
+        const analytesData = {
+            "glucosa": {
+                name: "Glucosa",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mmol/L": { factor: 0.05551, label: "mmol/L" },
+                    "g/L": { factor: 0.01, label: "g/L" }
+                },
+                references: {
+                    "mg/dL": "En ayunas: 70 - 100 mg/dL.<br>Post-prandial (2h): < 140 mg/dL.",
+                    "mmol/L": "En ayunas: 3.9 - 5.6 mmol/L.<br>Post-prandial (2h): < 7.8 mmol/L.",
+                    "g/L": "En ayunas: 0.70 - 1.00 g/L.<br>Post-prandial (2h): < 1.40 g/L."
+                }
+            },
+            "creatinina": {
+                name: "Creatinina",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "µmol/L": { factor: 88.4, label: "µmol/L (microsmol)" },
+                    "mmol/L": { factor: 0.0884, label: "mmol/L" }
+                },
+                references: {
+                    "mg/dL": "Hombres: 0.7 - 1.3 mg/dL.<br>Mujeres: 0.6 - 1.1 mg/dL.",
+                    "µmol/L": "Hombres: 62 - 115 µmol/L (microsmol).<br>Mujeres: 53 - 97 µmol/L (microsmol).",
+                    "mmol/L": "Hombres: 0.062 - 0.115 mmol/L.<br>Mujeres: 0.053 - 0.097 mmol/L."
+                }
+            },
+            "acido urico": {
+                name: "Ácido Úrico",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "µmol/L": { factor: 59.48, label: "µmol/L" },
+                    "mmol/L": { factor: 0.05948, label: "mmol/L" }
+                },
+                references: {
+                    "mg/dL": "Hombres: 3.4 - 7.0 mg/dL.<br>Mujeres: 2.4 - 6.0 mg/dL.",
+                    "µmol/L": "Hombres: 202 - 416 µmol/L.<br>Mujeres: 143 - 357 µmol/L.",
+                    "mmol/L": "Hombres: 0.20 - 0.42 mmol/L.<br>Mujeres: 0.14 - 0.36 mmol/L."
+                }
+            },
+            "urea": {
+                name: "Urea",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mmol/L": { factor: 0.1665, label: "mmol/L" },
+                    "g/L": { factor: 0.01, label: "g/L" }
+                },
+                references: {
+                    "mg/dL": "Normal: 15 - 45 mg/dL.",
+                    "mmol/L": "Normal: 2.5 - 7.5 mmol/L.",
+                    "g/L": "Normal: 0.15 - 0.45 g/L."
+                }
+            },
+            "bun": {
+                name: "BUN (Nitrógeno Ureico en Sangre)",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mmol/L": { factor: 0.357, label: "mmol/L" }
+                },
+                references: {
+                    "mg/dL": "Adultos: 6 - 20 mg/dL.",
+                    "mmol/L": "Adultos: 2.1 - 7.1 mmol/L."
+                }
+            },
+            "trigliceridos": {
+                name: "Triglicéridos",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mmol/L": { factor: 0.01129, label: "mmol/L" }
+                },
+                references: {
+                    "mg/dL": "Deseable: < 150 mg/dL.<br>Límite alto: 150 - 199 mg/dL.<br>Alto: 200 - 499 mg/dL.",
+                    "mmol/L": "Deseable: < 1.7 mmol/L.<br>Límite alto: 1.7 - 2.2 mmol/L.<br>Alto: 2.3 - 5.6 mmol/L."
+                }
+            },
+            "colesterol": {
+                name: "Colesterol Total",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mmol/L": { factor: 0.02586, label: "mmol/L" }
+                },
+                references: {
+                    "mg/dL": "Deseable: < 200 mg/dL.<br>Límite alto: 200 - 239 mg/dL.<br>Alto: ≥ 240 mg/dL.",
+                    "mmol/L": "Deseable: < 5.2 mmol/L.<br>Límite alto: 5.2 - 6.2 mmol/L.<br>Alto: ≥ 6.2 mmol/L."
+                }
+            },
+            "tgp": {
+                name: "TGP (ALT)",
+                category: "enzimas",
+                units: {
+                    "U/L": { factor: 1, label: "U/L" },
+                    "µkat/L": { factor: 0.01667, label: "µkat/L" }
+                },
+                references: {
+                    "U/L": "Hombres: < 50 U/L.<br>Mujeres: < 35 U/L.",
+                    "µkat/L": "Hombres: < 0.83 µkat/L.<br>Mujeres: < 0.58 µkat/L."
+                }
+            },
+            "tgo": {
+                name: "TGO (AST)",
+                category: "enzimas",
+                units: {
+                    "U/L": { factor: 1, label: "U/L" },
+                    "µkat/L": { factor: 0.01667, label: "µkat/L" }
+                },
+                references: {
+                    "U/L": "Hombres: < 40 U/L.<br>Mujeres: < 35 U/L.",
+                    "µkat/L": "Hombres: < 0.67 µkat/L.<br>Mujeres: < 0.58 µkat/L."
+                }
+            },
+            "ggt": {
+                name: "GGT",
+                category: "enzimas",
+                units: {
+                    "U/L": { factor: 1, label: "U/L" },
+                    "µkat/L": { factor: 0.01667, label: "µkat/L" }
+                },
+                references: {
+                    "U/L": "Hombres: 8 - 61 U/L.<br>Mujeres: 5 - 36 U/L.",
+                    "µkat/L": "Hombres: 0.13 - 1.02 µkat/L.<br>Mujeres: 0.08 - 0.60 µkat/L."
+                }
+            },
+            "fal": {
+                name: "FAL (Fosfatasa Alcalina)",
+                category: "enzimas",
+                units: {
+                    "U/L": { factor: 1, label: "U/L" },
+                    "µkat/L": { factor: 0.01667, label: "µkat/L" }
+                },
+                references: {
+                    "U/L": "Adultos: 40 - 130 U/L (Varía en edad de crecimiento y gestación).",
+                    "µkat/L": "Adultos: 0.67 - 2.17 µkat/L."
+                }
+            },
+            "ldh": {
+                name: "LDH (Lactato Deshidrogenasa)",
+                category: "enzimas",
+                units: {
+                    "U/L": { factor: 1, label: "U/L" },
+                    "µkat/L": { factor: 0.01667, label: "µkat/L" }
+                },
+                references: {
+                    "U/L": "Adultos: 140 - 280 U/L.",
+                    "µkat/L": "Adultos: 2.33 - 4.67 µkat/L."
+                }
+            },
+            "proteinas totales": {
+                name: "Proteínas Totales",
+                category: "proteinas",
+                units: {
+                    "g/dL": { factor: 1, label: "g/dL" },
+                    "g/L": { factor: 10, label: "g/L" }
+                },
+                references: {
+                    "g/dL": "Normal: 6.4 - 8.3 g/dL.",
+                    "g/L": "Normal: 64 - 83 g/L."
+                }
+            },
+            "albumina": {
+                name: "Albúmina",
+                category: "proteinas",
+                units: {
+                    "g/dL": { factor: 1, label: "g/dL" },
+                    "g/L": { factor: 10, label: "g/L" }
+                },
+                references: {
+                    "g/dL": "Normal: 3.5 - 5.0 g/dL.",
+                    "g/L": "Normal: 35 - 50 g/L."
+                }
+            },
+            "globulinas": {
+                name: "Globulinas",
+                category: "proteinas",
+                units: {
+                    "g/dL": { factor: 1, label: "g/dL" },
+                    "g/L": { factor: 10, label: "g/L" }
+                },
+                references: {
+                    "g/dL": "Normal: 2.0 - 3.5 g/dL.",
+                    "g/L": "Normal: 20 - 35 g/L."
+                }
+            },
+            "bilirrubina total": {
+                name: "Bilirrubina Total",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "µmol/L": { factor: 17.1, label: "µmol/L" }
+                },
+                references: {
+                    "mg/dL": "Adultos: 0.2 - 1.2 mg/dL.",
+                    "µmol/L": "Adultos: 3.4 - 20.5 µmol/L."
+                }
+            },
+            "bilirrubina directa": {
+                name: "Bilirrubina Directa",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "µmol/L": { factor: 17.1, label: "µmol/L" }
+                },
+                references: {
+                    "mg/dL": "Normal: 0.0 - 0.3 mg/dL.",
+                    "µmol/L": "Normal: 0.0 - 5.1 µmol/L."
+                }
+            },
+            "bilirrubina indirecta": {
+                name: "Bilirrubina Indirecta",
+                category: "metabolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "µmol/L": { factor: 17.1, label: "µmol/L" }
+                },
+                references: {
+                    "mg/dL": "Normal: 0.2 - 0.8 mg/dL.",
+                    "µmol/L": "Normal: 3.4 - 13.7 µmol/L."
+                }
+            },
+            "hierro": {
+                name: "Hierro Sérico",
+                category: "electrolitos",
+                units: {
+                    "µg/dL": { factor: 1, label: "µg/dL" },
+                    "µmol/L": { factor: 0.1791, label: "µmol/L" }
+                },
+                references: {
+                    "µg/dL": "Hombres: 65 - 175 µg/dL.<br>Mujeres: 50 - 170 µg/dL.",
+                    "µmol/L": "Hombres: 11.6 - 31.3 µmol/L.<br>Mujeres: 9.0 - 30.4 µmol/L."
+                }
+            },
+            "calcio": {
+                name: "Calcio Sérico",
+                category: "electrolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mmol/L": { factor: 0.25, label: "mmol/L" },
+                    "mEq/L": { factor: 0.5, label: "mEq/L" }
+                },
+                references: {
+                    "mg/dL": "Adultos: 8.5 - 10.5 mg/dL.",
+                    "mmol/L": "Adultos: 2.15 - 2.55 mmol/L.",
+                    "mEq/L": "Adultos: 4.3 - 5.3 mEq/L."
+                }
+            },
+            "fosforo": {
+                name: "Fósforo Inorgánico",
+                category: "electrolitos",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mmol/L": { factor: 0.3229, label: "mmol/L" }
+                },
+                references: {
+                    "mg/dL": "Adultos: 2.5 - 4.5 mg/dL.",
+                    "mmol/L": "Adultos: 0.81 - 1.45 mmol/L."
+                }
+            },
+            "factor reumatoideo": {
+                name: "Factor Reumatoideo",
+                category: "proteinas",
+                units: {
+                    "IU/mL": { factor: 1, label: "IU/mL" },
+                    "kU/L": { factor: 1, label: "kU/L" }
+                },
+                references: {
+                    "IU/mL": "Normal: < 14 IU/mL (Negativo).",
+                    "kU/L": "Normal: < 14 kU/L (Negativo)."
+                }
+            },
+            "pcr": {
+                name: "PCR (Proteína C Reactiva)",
+                category: "proteinas",
+                units: {
+                    "mg/L": { factor: 1, label: "mg/L" },
+                    "mg/dL": { factor: 0.1, label: "mg/dL" }
+                },
+                references: {
+                    "mg/L": "Normal: < 5.0 mg/L.<br>Riesgo Cardiovascular Alto: > 3.0 mg/L (hs-PCR).",
+                    "mg/dL": "Normal: < 0.5 mg/dL."
+                }
+            },
+            "ferritina": {
+                name: "Ferritina",
+                category: "proteinas",
+                units: {
+                    "ng/mL": { factor: 1, label: "ng/mL (or µg/L)" },
+                    "pmol/L": { factor: 2.247, label: "pmol/L" }
+                },
+                references: {
+                    "ng/mL": "Hombres: 20 - 250 ng/mL.<br>Mujeres: 15 - 150 ng/mL.",
+                    "pmol/L": "Hombres: 45 - 561 pmol/L.<br>Mujeres: 33 - 337 pmol/L."
+                }
+            },
+            "transferrina": {
+                name: "Transferrina",
+                category: "proteinas",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "g/L": { factor: 0.01, label: "g/L" }
+                },
+                references: {
+                    "mg/dL": "Normal: 200 - 360 mg/dL.",
+                    "g/L": "Normal: 2.0 - 3.6 g/L."
+                }
+            },
+            "igg": {
+                name: "Inmunoglobulina G (IgG)",
+                category: "proteinas",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "g/L": { factor: 0.01, label: "g/L" }
+                },
+                references: {
+                    "mg/dL": "Adultos: 700 - 1600 mg/dL.",
+                    "g/L": "Adultos: 7.0 - 16.0 g/L."
+                }
+            },
+            "iga": {
+                name: "Inmunoglobulina A (IgA)",
+                category: "proteinas",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "g/L": { factor: 0.01, label: "g/L" }
+                },
+                references: {
+                    "mg/dL": "Adultos: 70 - 400 mg/dL.",
+                    "g/L": "Adultos: 0.7 - 4.0 g/L."
+                }
+            },
+            "igm": {
+                name: "Inmunoglobulina M (IgM)",
+                category: "proteinas",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "g/L": { factor: 0.01, label: "g/L" }
+                },
+                references: {
+                    "mg/dL": "Adultos: 40 - 230 mg/dL.",
+                    "g/L": "Adultos: 0.4 - 2.3 g/L."
+                }
+            },
+            "ige": {
+                name: "Inmunoglobulina E (IgE)",
+                category: "proteinas",
+                units: {
+                    "IU/mL": { factor: 1, label: "IU/mL" },
+                    "ng/mL": { factor: 2.4, label: "ng/mL" }
+                },
+                references: {
+                    "IU/mL": "Adultos sanos: < 100 IU/mL.",
+                    "ng/mL": "Adultos sanos: < 240 ng/mL."
+                }
+            },
+            "c1q": {
+                name: "Complemento C1q",
+                category: "proteinas",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mg/L": { factor: 10, label: "mg/L" }
+                },
+                references: {
+                    "mg/dL": "Normal: 10 - 25 mg/dL.",
+                    "mg/L": "Normal: 100 - 250 mg/L."
+                }
+            },
+            "c3": {
+                name: "Complemento C3",
+                category: "proteinas",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "g/L": { factor: 0.01, label: "g/L" }
+                },
+                references: {
+                    "mg/dL": "Normal: 90 - 180 mg/dL.",
+                    "g/L": "Normal: 0.9 - 1.8 g/L."
+                }
+            },
+            "c4": {
+                name: "Complemento C4",
+                category: "proteinas",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "g/L": { factor: 0.01, label: "g/L" }
+                },
+                references: {
+                    "mg/dL": "Normal: 10 - 40 mg/dL.",
+                    "g/L": "Normal: 0.1 - 0.4 g/L."
+                }
+            },
+            "tsh": {
+                name: "TSH (Hormona Estimulante de Tiroides)",
+                category: "hormonas",
+                units: {
+                    "µIU/mL": { factor: 1, label: "µIU/mL" },
+                    "mIU/L": { factor: 1, label: "mIU/L" }
+                },
+                references: {
+                    "µIU/mL": "Adultos sanos: 0.4 - 4.2 µIU/mL.",
+                    "mIU/L": "Adultos sanos: 0.4 - 4.2 mIU/L."
+                }
+            },
+            "t3": {
+                name: "T3 Total (Triyodotironina)",
+                category: "hormonas",
+                units: {
+                    "ng/dL": { factor: 1, label: "ng/dL" },
+                    "nmol/L": { factor: 0.01536, label: "nmol/L" },
+                    "ng/mL": { factor: 0.01, label: "ng/mL" }
+                },
+                references: {
+                    "ng/dL": "Adultos: 80 - 200 ng/dL.",
+                    "nmol/L": "Adultos: 1.2 - 3.1 nmol/L.",
+                    "ng/mL": "Adultos: 0.8 - 2.0 ng/mL."
+                }
+            },
+            "t4": {
+                name: "T4 Total (Tiroxina)",
+                category: "hormonas",
+                units: {
+                    "µg/dL": { factor: 1, label: "µg/dL" },
+                    "nmol/L": { factor: 12.87, label: "nmol/L" }
+                },
+                references: {
+                    "µg/dL": "Adultos: 5.4 - 11.5 µg/dL.",
+                    "nmol/L": "Adultos: 69.5 - 148 nmol/L."
+                }
+            },
+            "pth": {
+                name: "PTH Intacta (Paratohormona)",
+                category: "hormonas",
+                units: {
+                    "pg/mL": { factor: 1, label: "pg/mL" },
+                    "pmol/L": { factor: 0.1061, label: "pmol/L" }
+                },
+                references: {
+                    "pg/mL": "Normal: 15 - 65 pg/mL.",
+                    "pmol/L": "Normal: 1.6 - 6.9 pmol/L."
+                }
+            },
+            "calcitonina": {
+                name: "Calcitonina",
+                category: "hormonas",
+                units: {
+                    "pg/mL": { factor: 1, label: "pg/mL" },
+                    "pmol/L": { factor: 0.2926, label: "pmol/L" }
+                },
+                references: {
+                    "pg/mL": "Hombres: < 8.4 pg/mL.<br>Mujeres: < 5.0 pg/mL.",
+                    "pmol/L": "Hombres: < 2.46 pmol/L.<br>Mujeres: < 1.46 pmol/L."
+                }
+            },
+            "kappa": {
+                name: "Cadenas Ligeras Libres Kappa",
+                category: "proteinas",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mg/L": { factor: 10, label: "mg/L" }
+                },
+                references: {
+                    "mg/dL": "Normal en suero: 0.33 - 1.94 mg/dL.",
+                    "mg/L": "Normal en suero: 3.3 - 19.4 mg/L."
+                }
+            },
+            "lambda": {
+                name: "Cadenas Ligeras Libres Lambda",
+                category: "proteinas",
+                units: {
+                    "mg/dL": { factor: 1, label: "mg/dL" },
+                    "mg/L": { factor: 10, label: "mg/L" }
+                },
+                references: {
+                    "mg/dL": "Normal en suero: 0.57 - 2.63 mg/dL.",
+                    "mg/L": "Normal en suero: 5.7 - 26.3 mg/L."
+                }
+            }
+        };
+
+        let currentAnalyteId = "";
+        let currentCategory = "all";
+
+        window.onload = function() {
+            // Cargar tema persistido
+            const savedTheme = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", savedTheme);
+            updateThemeIcon(savedTheme);
+            
+            // Listar analitos por primera vez
+            renderAnalytesList();
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute("data-theme");
+            const newTheme = currentTheme === "dark" ? "light" : "dark";
+            document.documentElement.setAttribute("data-theme", newTheme);
+            localStorage.setItem("theme", newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const iconSvg = document.getElementById("theme-icon");
+            if (theme === "dark") {
+                // Luna
+                iconSvg.innerHTML = '<path d="M12.3 22h-.1c-5.5 0-10-4.5-10-10 0-4.8 3.5-9 8.3-9.9.5-.1.9.3.8.8-.1.4-.1.9-.1 1.3 0 5.5 4.5 10 10 10 .4 0 .9 0 1.3-.1.5-.1.9.3.8.8-.9 4.8-5.1 8.3-9.9 8.3z"/>';
+            } else {
+                // Sol
+                iconSvg.innerHTML = '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.01c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
+            }
+        }
+
+        function selectCategory(category, element) {
+            document.querySelectorAll(".category-chip").forEach(chip => chip.classList.remove("active"));
+            element.classList.add("active");
+            currentCategory = category;
+            filterAnalytes();
+        }
+
+        function filterAnalytes() {
+            const query = document.getElementById("search-bar").value.toLowerCase().trim();
+            renderAnalytesList(query, currentCategory);
+        }
+
+        function renderAnalytesList(filterQuery = "", category = "all") {
+            const container = document.getElementById("analyte-list-container");
+            const emptyMsg = document.getElementById("empty-message");
+            container.innerHTML = "";
+            let matchedCount = 0;
+
+            for (const [id, data] of Object.entries(analytesData)) {
+                const matchesSearch = data.name.toLowerCase().includes(filterQuery) || id.includes(filterQuery);
+                const matchesCategory = category === "all" || data.category === category;
+
+                if (matchesSearch && matchesCategory) {
+                    matchedCount++;
+                    const card = document.createElement("div");
+                    card.className = "analyte-card";
+                    card.onclick = () => openCalculator(id);
+
+                    // Extraer las unidades de medida disponibles para mostrarlas como badge informativo
+                    const unitsAvail = Object.keys(data.units).join(", ");
+
+                    card.innerHTML = `
+                        <div class="analyte-info">
+                            <h3>${data.name}</h3>
+                            <p>Unidades: ${unitsAvail}</p>
+                        </div>
+                        <svg class="chevron-icon" viewBox="0 0 24 24">
+                            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+                        </svg>
+                    `;
+                    container.appendChild(card);
+                }
+            }
+
+            if (matchedCount === 0) {
+                emptyMsg.style.display = "block";
+            } else {
+                emptyMsg.style.display = "none";
+            }
+        }
+
+        function openCalculator(analyteId) {
+            currentAnalyteId = analyteId;
+            const analyte = analytesData[analyteId];
+
+            document.getElementById("calc-name").innerText = analyte.name;
+            document.getElementById("calc-category").innerText = "Categoría: " + analyte.category.toUpperCase();
+
+            // Rellenar select de unidad de entrada
+            const unitSelect = document.getElementById("input-unit-select");
+            unitSelect.innerHTML = "";
+            for (const [unitKey, value] of Object.entries(analyte.units)) {
+                const option = document.createElement("option");
+                option.value = unitKey;
+                option.innerText = value.label;
+                unitSelect.appendChild(option);
+            }
+
+            // Inicializar valores de entrada
+            document.getElementById("input-value").value = 1;
+
+            // Mostrar vista de calculadora y ocultar búsqueda
+            document.getElementById("search-view").style.display = "none";
+            document.getElementById("calculator-view").style.display = "block";
+
+            // Calcular por primera vez
+            performConversion();
+        }
+
+        function showSearchView() {
+            document.getElementById("calculator-view").style.display = "none";
+            document.getElementById("search-view").style.display = "block";
+            filterAnalytes();
+        }
+
+        function performConversion() {
+            const inputVal = parseFloat(document.getElementById("input-value").value);
+            const fromUnit = document.getElementById("input-unit-select").value;
+            const resultsContainer = document.getElementById("conversion-results");
+            
+            if (isNaN(inputVal)) {
+                resultsContainer.innerHTML = '<p style="padding: 1rem; color: var(--text-secondary); text-align: center;">Por favor, ingrese un valor numérico válido.</p>';
+                return;
+            }
+
+            const analyte = analytesData[currentAnalyteId];
+            resultsContainer.innerHTML = "";
+
+            // Convertimos el valor de entrada a la unidad base (la que tiene factor = 1)
+            const baseFactor = analyte.units[fromUnit].factor;
+            const baseValue = inputVal / baseFactor;
+
+            // Calculamos la conversión para cada una de las unidades disponibles simultáneamente
+            for (const [unitKey, unitData] of Object.entries(analyte.units)) {
+                // Convertir de base a destino
+                const convertedValue = baseValue * unitData.factor;
+                
+                // Formatear decimales según tamaño del número para legibilidad clínica
+                let formattedValue;
+                if (convertedValue === 0) {
+                    formattedValue = "0";
+                } else if (Math.abs(convertedValue) < 0.001) {
+                    formattedValue = convertedValue.toFixed(6);
+                } else if (Math.abs(convertedValue) < 0.1) {
+                    formattedValue = convertedValue.toFixed(4);
+                } else {
+                    formattedValue = convertedValue.toFixed(2);
+                }
+
+                const card = document.createElement("div");
+                card.className = "result-card";
+                card.innerHTML = `
+                    <span class="result-unit">${unitData.label}</span>
+                    <span class="result-value">${formattedValue}</span>
+                `;
+                resultsContainer.appendChild(card);
+            }
+
+            // Mostrar el valor de referencia según la unidad de entrada activa
+            const refContent = document.getElementById("reference-content");
+            const activeRef = analyte.references[fromUnit] || "Consulte rango de referencia de su laboratorio local.";
+            refContent.innerHTML = activeRef;
+        }
+    </script>
+</body>
+</html>
