@@ -1,0 +1,39 @@
+ - name: Configurar Entorno Java 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'zulu'
+      java-version: '17'
+
+  - name: Instalar Android SDK
+    uses: android-actions/setup-android@v3
+
+  - name: Instalar Cordova de forma Global
+    run: npm install -g cordova
+
+  - name: Crear Estructura Móvil y Compilar
+    run: |
+      # 1. Creamos un espacio móvil limpio con Cordova
+      cordova create med_app com.medcalc.convert "MedCalcConvert"
+      cd med_app
+      
+      # 2. Reemplazamos la plantilla básica por el index.html listo
+      rm -rf www/*
+      cp ../index.html www/index.html
+      
+      # 3. Agregamos soporte para Android y compilamos la compilación base
+      cordova platform add android
+      cordova build android --debug
+
+  - name: Forzar Extracción Universal de APK
+    run: |
+      mkdir -p final-artifact
+      # Esta línea rastrea recursivamente cualquier APK compilado en el disco virtual y lo asegura aquí
+      find . -name "*.apk" -exec cp {} ./final-artifact/MedCalc_Convert.apk \;
+      echo "Contenidos del directorio final:"
+      ls -l final-artifact
+
+  - name: Enviar APK para Descarga Directa
+    uses: actions/upload-artifact@v4
+    with:
+      name: MedCalc-Android-APK
+      path: final-artifact/MedCalc_Convert.apk
