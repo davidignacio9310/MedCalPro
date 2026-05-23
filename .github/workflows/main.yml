@@ -1,44 +1,31 @@
-name: Compilar APK Corregido
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+- name: Configurar Entorno Java
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'zulu'
+      java-version: '17'
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Descargar Codigo
-        uses: actions/checkout@v4
+  - name: Instalar Android SDK
+    uses: android-actions/setup-android@v3
 
-      - name: Configurar Entorno Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
+  - name: Instalar Cordova
+    run: npm install -g cordova
 
-      - name: Instalar Android SDK
-        uses: android-actions/setup-android@v3
+  - name: Construir Proyecto Android
+    run: |
+      cordova create app com.medcalc.analitos "Conversor Analitos"
+      cd app
+      rm -rf www/*
+      cp ../index.html www/index.html
+      cordova platform add android
+      cordova build android --debug
 
-      - name: Instalar Cordova
-        run: npm install -g cordova
+  - name: Localizar y Extraer APK Automatisamente
+    run: |
+      mkdir -p apk-output
+      find . -name "*.apk" -exec cp {} ./apk-output/Conversor_Analitos.apk \;
 
-      - name: Construir Proyecto Android
-        run: |
-          cordova create app com.medcalc.analitos "Conversor Analitos"
-          cd app
-          rm -rf www/*
-          cp ../index.html www/index.html
-          cordova platform add android
-          cordova build android --debug
-
-      - name: Localizar y Extraer APK Automatisamente
-        run: |
-          mkdir -p apk-output
-          find . -name "*.apk" -exec cp {} ./apk-output/Conversor_Analitos.apk \;
-
-      - name: Entregar APK Terminado
-        uses: actions/upload-artifact@v4
-        with:
-          name: MedConv-Android-APK
-          path: apk-output/Conversor_Analitos.apk
+  - name: Entregar APK Terminado
+    uses: actions/upload-artifact@v4
+    with:
+      name: MedConv-Android-APK
+      path: apk-output/Conversor_Analitos.apk
